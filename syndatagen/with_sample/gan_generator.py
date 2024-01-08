@@ -70,12 +70,19 @@ def compare_data(original_data, generated_data, generated_name):
     original_stats = original_data.describe().loc[['mean', 'std']]
     generated_stats = generated_data.describe().loc[['mean', 'std']]
 
+    print("Original Data Statistics:")
+    print(original_stats)
+    
+    print("\nGenerated Data Statistics:")
+    print(generated_stats)
+
     save_folder = 'syndatagen/with_sample/generated_data/statistics'
     os.makedirs(save_folder, exist_ok=True)
 
-    # Save statistics to a CSV file
-    stats_filename = os.path.join(save_folder, f'{generated_name}_statistics.csv')
-    generated_stats.to_csv(stats_filename)
+    # Save both original and generated statistics to a CSV file
+    stats_filename = os.path.join(save_folder, f'{generated_name}_combined_statistics.csv')
+    combined_stats = pd.concat([original_stats, generated_stats])
+    combined_stats.to_csv(stats_filename)
 
     # Plot a comparison chart and save it
     plt.figure(figsize=(12, 6))
