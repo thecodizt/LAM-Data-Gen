@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: SDG-Source
+    tty: true
+    volumes:
+      - .:/code

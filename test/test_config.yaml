@@ -1,0 +1,11 @@
+num_tables: 1
+sample_data: false
+without_sample_tables:
+  - name: Table1
+    num_rows: 100
+    table_type: "cross_sectional"
+    generation_method: "random"
+    num_cols: 1
+    fields:
+      - name: col1
+        type: "random_string"
