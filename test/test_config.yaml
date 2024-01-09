@@ -1,11 +1,11 @@
-num_tables: 1
-sample_data: false
-without_sample_tables:
-  - name: Table1
-    num_rows: 100
-    table_type: "cross_sectional"
-    generation_method: "random"
-    num_cols: 1
-    fields:
-      - name: col1
-        type: "random_string"
+num_tables: 2
+sample_data: true
+foreign_keys: true
+table_1: DF1
+table_2: DF2
+foreign_key_col: PassengerId
+with_sample_tables:
+  - name: DF1
+    num_rows: 200
+  - name: DF2
+    num_rows: 200

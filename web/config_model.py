@@ -77,12 +77,13 @@ class WithoutSampleTable(BaseModel):
 class WithSampleTable(BaseModel):
     name: str
     num_rows: int
-    num_cols: int
-    generation_method: str
-    TabelType: TableType
 
 class Config(BaseModel):
     num_tables: int
     sample_data: bool
+    foreign_keys: bool
+    table_1: Optional[str] = None
+    table_2: Optional[str] = None
+    foreign_key_col: Optional[str] = None
     without_sample_tables: Optional[List[WithoutSampleTable]] = None
     with_sample_tables: Optional[List[WithSampleTable]] = None
