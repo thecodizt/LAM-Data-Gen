@@ -7,6 +7,7 @@ import datetime
 import plotly.graph_objects as go
 import plotly.subplots as sp
 
+from syndatagen.with_sample.gan_generator import GAN
 
 from config_model import Config
 
@@ -134,6 +135,9 @@ def merge_tables(params, tables):
 def without_sample_generate_handle(params, table):
 
     numeric_data = table.select_dtypes(include=['int64', 'float64'])
+    int_data = table.select_dtypes(include=['int64'])
+    int_columns = int_data.columns.values.tolist()
+    numeric_columns = numeric_data.columns.values.tolist()
     non_numeric_data = table.select_dtypes(include=['object'])
 
     non_numeric_data_list = non_numeric_data.values.tolist()
@@ -153,8 +157,17 @@ def without_sample_generate_handle(params, table):
     table['_id'] = index_list
 
     # TODO: GAN Generation to be done here
-    generated_numeric_data = numeric_data
+    randomness_degree=100 # should take from config file
+    num_generated_samples = 1000 # should take from config file
+    gan_model = GAN(numeric_data, randomness_degree)
+    generated_numeric_data = pd.DataFrame(gan_model.generate(num_generated_samples))
+    generated_numeric_data.columns = numeric_columns
 
+    convert_dict={}
+    for x in int_columns:
+        convert_dict[x] = int
+    generated_numeric_data.astype(convert_dict)
+    
     result = pd.merge(generated_numeric_data, non_numeric_data, on='_id')
 
     return result
