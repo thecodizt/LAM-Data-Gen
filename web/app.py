@@ -7,13 +7,12 @@ import datetime
 import plotly.graph_objects as go
 import plotly.subplots as sp
 
-
 from config_model import Config
 
 import sys
 sys.path.append('../')
 
-from syndatagen.with_sample.gan_generator import GAN
+from gan_generator import GAN
 
 
 def ui_input():
