@@ -96,7 +96,6 @@ tensorboard-data-server
 tensorflow
 tensorflow-estimator
 tensorflow-io-gcs-filesystem
-tensorflow-macos
 termcolor
 threadpoolctl
 toml
