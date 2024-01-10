@@ -1,11 +1,8 @@
 num_tables: 2
 sample_data: true
-foreign_keys: true
-table_1: DF1
-table_2: DF2
+scale_factor: 1
+foreign_key: true
 foreign_key_col: PassengerId
 with_sample_tables:
   - name: DF1
-    num_rows: 200
   - name: DF2
-    num_rows: 200

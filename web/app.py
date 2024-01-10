@@ -3,8 +3,12 @@ import yaml
 import pandas as pd
 from pydantic import ValidationError
 import base64
+import datetime
+import plotly.graph_objects as go
+import plotly.subplots as sp
 
-from config_model import Config, TableType, Distribution
+
+from config_model import Config
 
 import sys
 sys.path.append('../')
@@ -18,10 +22,10 @@ def ui_input():
     params['sample_data'] = st.checkbox('Sample data', value=True)
 
     if num_tables == 2:
-        params['foreign_keys'] = st.checkbox('Foreign keys', value=True)
+        params['foreign_key'] = st.checkbox('Foreign keys', value=True)
         params['foreign_key_col'] = st.text_input('Enter foreign key column', value='PassengerId')
     else:
-        params['foreign_keys'] = False
+        params['foreign_key'] = False
 
     params['with_sample_tables'] = []
     for i in range(num_tables):
@@ -80,6 +84,45 @@ def yaml_input():
 
     return params, tables
 
+def analysis(original_data, generated_data):
+    st.header("Analysis")
+
+    st.subheader("Statistics")
+    with st.expander("Original Data"):
+        st.write(original_data.describe())
+
+    with st.expander("Generated Data"):
+        st.write(generated_data.describe())
+
+    st.subheader("Visualizations")
+
+    # Visualize statistics for each column
+    for column in original_data.columns:
+        # Box plot
+        with st.expander(f'{column}'):
+            fig = go.Figure()
+            fig.add_trace(go.Box(y=original_data[column], name='Original'))
+            fig.add_trace(go.Box(y=generated_data[column], name='Generated'))
+            fig.update_layout(title_text=column, autosize=False, width=800, height=500)
+            st.plotly_chart(fig, use_container_width=True)
+
+    
+            if original_data[column].dtype == 'object':
+                st.subheader(f'Histogram for {column}')
+                fig = go.Figure()
+                fig.add_trace(go.Histogram(x=original_data[column], name='Original', opacity=0.75))
+                fig.add_trace(go.Histogram(x=generated_data[column], name='Generated', opacity=0.75))
+                fig.update_layout(title_text=column, barmode='overlay', autosize=False, width=800, height=500)
+                st.plotly_chart(fig, use_container_width=True)
+            # If the column is numeric, use scatter plot
+            else:
+                st.subheader(f'Scatter plot for {column}')
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=original_data[column], y=generated_data[column], mode='markers', name='Original'))
+                fig.add_trace(go.Scatter(x=generated_data[column], y=generated_data[column], mode='markers', name='Generated'))
+                fig.update_layout(title_text=column, autosize=False, width=800, height=500)
+                st.plotly_chart(fig, use_container_width=True)
+
 def merge_tables(params, tables):
     df1 = tables[0]
     df2 = tables[1]
@@ -90,7 +133,29 @@ def merge_tables(params, tables):
 
 def without_sample_generate_handle(params, table):
 
-    result = table
+    numeric_data = table.select_dtypes(include=['int64', 'float64'])
+    non_numeric_data = table.select_dtypes(include=['object'])
+
+    non_numeric_data_list = non_numeric_data.values.tolist()
+
+    unique_records = set(tuple(x) for x in non_numeric_data_list)
+
+    unique_records = list(unique_records)
+
+    unique_records = [list(x) for x in unique_records]
+
+    index_list = [unique_records.index(x) for x in non_numeric_data_list]
+
+    non_numeric_data['_id'] = index_list
+
+    numeric_data['_id'] = index_list
+
+    table['_id'] = index_list
+
+    # TODO: GAN Generation to be done here
+    generated_numeric_data = numeric_data
+
+    result = pd.merge(generated_numeric_data, non_numeric_data, on='_id')
 
     return result
 
@@ -106,8 +171,6 @@ def split_tables(params, table, df1_cols, df2_cols):
     df2.set_index(foreign_key, inplace=True)
 
     return [df1, df2]
-
-    
 
 if __name__ == "__main__":
     st.title("Synthetic Data Generator")
@@ -133,12 +196,18 @@ if __name__ == "__main__":
             generate_button = st.button("Generate")
 
     if params is not None and generate_button:
+
+        original_data = None
+        generated_data = None
+
         if params['sample_data']:
 
             # TODO: Generation with sample data
 
-            if params['foreign_keys']:
+            if params['foreign_key']:
                 table, df1_cols, df2_cols = merge_tables(params, tables)
+
+                original_data = table
 
                 st.subheader("Merged Data based on Foreign Key")
 
@@ -148,20 +217,26 @@ if __name__ == "__main__":
 
                 table = without_sample_generate_handle(params, table)
 
-                tables = split_tables(params, table, df1_cols, df2_cols)
+                generated_data = table
 
-                # Assuming 'tables' is a list of pandas DataFrames
-                for i, table in enumerate(tables):
-                    st.subheader(f"Table {i+1}")
-                    st.write(table)
-                    st.download_button(label="Download CSV", data=table.to_csv().encode("utf-8"), file_name=f"table_{i+1}.csv", mime="text/csv")
+                st.write(table)
+                st.download_button(label="Download CSV", data=table.to_csv().encode("utf-8"), file_name=f"generated_table_{datetime.datetime.now()}.csv", mime="text/csv")
 
             else:
                 st.header("Generated Data")
 
+                original_data = tables[0]
+
                 table = without_sample_generate_handle(params, tables[0])
+
+                generated_data = table
+
                 st.write(table)
                 st.download_button(label="Download CSV", data=table.to_csv().encode("utf-8"), file_name=f"generated.csv", mime="text/csv")
+        
         else:
             # TODO: Generation without sample data
             pass
+
+        if original_data is not None and generated_data is not None:
+            analysis(original_data, generated_data)

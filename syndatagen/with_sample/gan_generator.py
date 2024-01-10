@@ -51,7 +51,10 @@ class GAN:
         return (data - self.min_val) / (self.max_val - self.min_val)
 
     def denormalize(self, normalized_data):
-        return normalized_data * (self.max_val - self.min_val) + self.min_val
+        denormalized_data = normalized_data * (self.max_val.values - self.min_val.values) + self.min_val.values
+        return denormalized_data
+
+
 
     def generate(self, num_samples):
         noise = np.random.normal(0, 1, (num_samples, self.randomness_degree))
