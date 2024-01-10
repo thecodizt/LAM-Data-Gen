@@ -1,6 +1,6 @@
 num_tables: 2
 sample_data: true
-scale_factor: 1
+scale_factor: 10
 foreign_key: true
 foreign_key_col: PassengerId
 with_sample_tables:

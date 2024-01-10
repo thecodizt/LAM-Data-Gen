@@ -7,12 +7,14 @@ import datetime
 import plotly.graph_objects as go
 import plotly.subplots as sp
 
-from syndatagen.with_sample.gan_generator import GAN
 
 from config_model import Config
 
 import sys
 sys.path.append('../')
+
+from syndatagen.with_sample.gan_generator import GAN
+
 
 def ui_input():
     params = {}
@@ -115,14 +117,14 @@ def analysis(original_data, generated_data):
                 fig.add_trace(go.Histogram(x=generated_data[column], name='Generated', opacity=0.75))
                 fig.update_layout(title_text=column, barmode='overlay', autosize=False, width=800, height=500)
                 st.plotly_chart(fig, use_container_width=True)
-            # If the column is numeric, use scatter plot
-            else:
-                st.subheader(f'Scatter plot for {column}')
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(x=original_data[column], y=generated_data[column], mode='markers', name='Original'))
-                fig.add_trace(go.Scatter(x=generated_data[column], y=generated_data[column], mode='markers', name='Generated'))
-                fig.update_layout(title_text=column, autosize=False, width=800, height=500)
-                st.plotly_chart(fig, use_container_width=True)
+            # # If the column is numeric, use scatter plot
+            # else:
+            #     st.subheader(f'Scatter plot for {column}')
+            #     fig = go.Figure()
+            #     fig.add_trace(go.Scatter(x=original_data[column], y=generated_data[column], mode='markers', name='Original'))
+            #     fig.add_trace(go.Scatter(x=generated_data[column], y=generated_data[column], mode='markers', name='Generated'))
+            #     fig.update_layout(title_text=column, autosize=False, width=800, height=500)
+            #     st.plotly_chart(fig, use_container_width=True)
 
 def merge_tables(params, tables):
     df1 = tables[0]
@@ -135,9 +137,7 @@ def merge_tables(params, tables):
 def without_sample_generate_handle(params, table):
 
     numeric_data = table.select_dtypes(include=['int64', 'float64'])
-    int_data = table.select_dtypes(include=['int64'])
-    int_columns = int_data.columns.values.tolist()
-    numeric_columns = numeric_data.columns.values.tolist()
+
     non_numeric_data = table.select_dtypes(include=['object'])
 
     non_numeric_data_list = non_numeric_data.values.tolist()
@@ -156,19 +156,25 @@ def without_sample_generate_handle(params, table):
 
     table['_id'] = index_list
 
+    int_data = table.select_dtypes(include=['int64'])
+    int_columns = int_data.columns.values.tolist()
+    numeric_columns = numeric_data.columns.values.tolist()
+
     # TODO: GAN Generation to be done here
-    randomness_degree=100 # should take from config file
-    num_generated_samples = 1000 # should take from config file
+    num_generated_samples = int(params['scale_factor'] * len(table)) # should take from config file
+    # randomness_degree = params['randomness_degree'] # should take from config file
+    randomness_degree = 100
     gan_model = GAN(numeric_data, randomness_degree)
     generated_numeric_data = pd.DataFrame(gan_model.generate(num_generated_samples))
     generated_numeric_data.columns = numeric_columns
 
-    convert_dict={}
-    for x in int_columns:
-        convert_dict[x] = int
-    generated_numeric_data.astype(convert_dict)
-    
+    for column in int_columns:
+        generated_numeric_data[column] = generated_numeric_data[column].astype(int)
+
     result = pd.merge(generated_numeric_data, non_numeric_data, on='_id')
+
+    result.drop('_id', axis=1, inplace=True)
+    table.drop('_id', axis=1, inplace=True)
 
     return result
 
