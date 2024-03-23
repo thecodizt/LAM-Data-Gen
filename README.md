@@ -1,4 +1,4 @@
-# Data Generator -LLM
+# Data Generator - 2
 ## Supported Methods
 
 **With Sample Data:**
