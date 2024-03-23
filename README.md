@@ -1,4 +1,4 @@
-# Synthetic Data Generator - Python Library
+# Synthetic Data Generator - Python Libraries
 
 ## Supported Methods
 
